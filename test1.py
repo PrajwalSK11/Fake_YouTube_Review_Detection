@@ -1,5 +1,5 @@
 #VENUGOPAL ADEP NOTEBOOK
-
+#prajwal
 # Data processing packages
 import pandas as pd
 import numpy as np
@@ -115,7 +115,7 @@ def hinglish_to_english(text):
 df['English_Translation'] = df['Processed_Comment'].apply(hinglish_to_english)
 
 
-# Calculating the Sentiment Polarity
+# Calculating the Sentiment Polarity.
 pol = []  # list which will contain the polarity of the comments
 for i in df.Processed_Comment.values:
     try:
