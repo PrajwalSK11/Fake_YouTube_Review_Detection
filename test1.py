@@ -1,5 +1,5 @@
 #VENUGOPAL ADEP NOTEBOOK
-#prajwal
+
 # Data processing packages
 import pandas as pd
 import numpy as np
@@ -40,17 +40,79 @@ def preprocess_text(text):
 '''
 
 nlp = spacy.load("en_core_web_sm")
+
+# Importing YouTube comments data
+comm = pd.read_csv('D:\Prajwal\PCCOE\Major project\Youtube\Code\Fake_YouTube_Review_Detection\youtube_review_dataset.csv', encoding='utf8', error_bad_lines=False)
+df = pd.DataFrame(comm)
+df.head()
+df = df.drop(['UserName', 'Time', 'Likes', 'Reply Count'], axis=1)
+df.head()
+
+#try
+import re
+from nltk.tokenize import word_tokenize
+from nltk.stem import WordNetLemmatizer
+from nltk.stem import PorterStemmer, LancasterStemmer
+from nltk.stem.snowball import SnowballStemmer
+import string
+from string import punctuation
+import unicodedata
+
+stop_words = stopwords.words('english')
+porter_stemmer = PorterStemmer()
+lancaster_stemmer = LancasterStemmer() 
+snowball_stemer = SnowballStemmer(language="english")
+lzr = WordNetLemmatizer()
+
+def text_processing(text):   
+    # convert text into lowercase
+    text = text.lower()
+    
+    # Normalize the string
+    text = unicodedata.normalize('NFKD', text).encode('ascii', 'ignore').decode('utf-8', 'ignore')
+    
+    # Remove URLs
+    text = re.sub(r"http\S+", "", text)
+
+    # Remove non-ASCII characters
+    text = re.sub(r'[^\x00-\x7F]+', '', text)
+
+    # Remove repeated "Y" characters
+    text = re.sub(r'(Y)\1+', r'\1', text)
+    
+    # Remove repeated "y" characters (case-insensitive)
+    text = re.sub(r'(y)\1+', r'\1', text, flags=re.IGNORECASE)
+ 
+    # remove new line characters in text
+    text = re.sub(r'\n',' ', text)
+    
+    # remove weird characters
+    text = re.sub(r'[^\x00-\x7F]+', '', text)
+    
+    # remove punctuations from text
+    text = re.sub('[%s]' % re.escape(punctuation), "", text)
+    
+    # remove references and hashtags from text
+    text = re.sub("^a-zA-Z0-9$,.", "", text)
+    text = re.sub(r"http\S+", "", text)
+    
+    # remove multiple spaces from text
+    text = re.sub(r'\s+', ' ', text, flags=re.I)
+    
+    # remove special characters from text
+    text = re.sub(r'\W', ' ', text)
+
+    text = ' '.join([word for word in word_tokenize(text) if word not in stop_words])
+      
+    # lemmatizer using WordNetLemmatizer from nltk package
+    text=' '.join([lzr.lemmatize(word) for word in word_tokenize(text)])
+    
+    return text
+
+sample = "ℍ𝕚 𝔼𝕧𝕖𝕣𝕪𝕠𝕟𝕖,,,,,,,.,./;/';à¤…à¤—à¤° à¤¯à¥‡ à¤¸à¤²à¤¾à¤° à¤®à¥‚à¤µà¥€ à¤¹à¥ˆ à¤¤à¥‹ à¤®à¥ˆ à¤¸à¤²à¤®à¤¾à¤¨ à¤–à¤¾à¤‚à¤¨ à¤¹à¥‚à¤,,,à¤¸à¤¾à¤¹à¥‹ à¤®à¥‚à¤µà¥€ à¤•à¤¾ðŸ˜‚ðŸ˜‚ðŸ˜‚'𝕀 𝕒𝕞 𝔸𝕟𝕜𝕚𝕥 𝔾𝕦𝕡𝕥𝕒 ðŸŒðŸ 𝕙𝕒𝕧𝕚𝕟𝕘 𝕥𝕙𝕖 𝕗𝕠𝕝𝕝𝕠𝕨𝕚𝕟𝕘 𝕂𝕒𝕘𝕘𝕝𝕖 𝕡𝕣𝕠𝕗𝕚𝕝𝕖 \n https://www.kaggle.com/nkitgupta 𝕒𝕟𝕕, 𝕀 𝕒𝕞 😊 𝕥𝕠 𝕔𝕣𝕖𝕒𝕥𝕖 𝕥𝕙𝕚𝕤 𝕟𝕠𝕥𝕖𝕓𝕠𝕠𝕜."
+print(text_processing(sample))
+
 '''
-# Function to preprocess text (remove stopwords and apply lemmatization)
-def preprocess_text(text):
-    stop_words = set(stopwords.words('english'))
-    if isinstance(text, str):
-        doc = nlp(text)
-        lemmatized_words = [token.lemma_ for token in doc if token.is_alpha and token.lemma_.lower() not in stop_words]
-        return ' '.join(lemmatized_words)
-    else:
-        return ''  # Return an empty string for NaN values
-'''    
 def preprocess_text(text):
     stop_words = set(stopwords.words('english'))
     if isinstance(text, str):
@@ -65,25 +127,26 @@ def preprocess_text(text):
             return filtered_text
     else:
         return None  # Return None for NaN values
+'''
+
+# Testing NLP - Sentiment Analysis using TextBlob
+#TextBlob("The movie is ok").sentiment
+
+
+tqdm.pandas()
+df['Processed'] = df['Comment'].fillna('').progress_apply(text_processing)
+df = df[df['Processed'].str.len() > 0]
+#df['Processed'] = df['Comment'].fillna('').progress_apply(text_processing)
+#df['Processed_Comment'] = df['Comment'].progress_apply(preprocess_text)
+#df = df.dropna(subset=['Processed'])
 
 # Initialize the Progress Bar (tqdm) for visualizing the progress
 tqdm.pandas()
 
-# Testing NLP - Sentiment Analysis using TextBlob
-TextBlob("The movie is ok").sentiment
-
-
-# Importing YouTube comments data
-comm = pd.read_csv('D:\Prajwal\PCCOE\Major project\Youtube\Codes\data.csv', encoding='utf8', error_bad_lines=False)
-df = pd.DataFrame(comm)
-df.head()
-df = df.drop(['UserName', 'Time', 'Likes', 'Reply Count'], axis=1)
-df.head()
-
-tqdm.pandas()
 
 # Apply the preprocess_text function to the 'Comment' column
-df['Processed_Comment'] = df['Comment'].apply(preprocess_text)
+#df['Processed_Comment'] = df['Comment'].apply(preprocess_text)
+#df['Processed_Comment'] = df['Comment'].progress_apply(preprocess_text)
 '''
 from googletrans import Translator
 from tqdm.notebook import tqdm
@@ -94,7 +157,7 @@ def hinglish_to_english(text):
     return translation.text
 '''
 from googletrans import Translator
-import json
+#import json
 
 def hinglish_to_english(text):
     if text is None or pd.isnull(text) or not text.strip():
@@ -109,13 +172,11 @@ def hinglish_to_english(text):
         print(f"Error details: {e}")
         return ''
 
-
-
 # Apply the translation function to the 'Text' column and create a new column
 df['English_Translation'] = df['Processed_Comment'].apply(hinglish_to_english)
 
 
-# Calculating the Sentiment Polarity.
+# Calculating the Sentiment Polarity
 pol = []  # list which will contain the polarity of the comments
 for i in df.Processed_Comment.values:
     try:
@@ -162,4 +223,4 @@ df.pol.value_counts()
 #df.pol.value_counts().plot.bar()
 
 # Use raw string literals to avoid escape characters
-df.to_csv(r'D:\Prajwal\PCCOE\Major project\Youtube\Codes\filee.csv')
+df.to_csv(r'D:\Prajwal\PCCOE\Major project\Youtube\Code\Fake_YouTube_Review_Detection\test1.csv')
