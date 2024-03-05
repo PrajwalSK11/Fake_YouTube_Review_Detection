@@ -1,7 +1,7 @@
 # VENUGOPAL ADEP NOTEBOOK
 # %%
+
 # Data processing packages
-import random
 from wordcloud import WordCloud
 from string import punctuation
 from nltk.stem import WordNetLemmatizer
@@ -19,13 +19,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 pd.set_option('display.max_colwidth', 200)
-
-# Visualization packages
-
-# NLP packages
-#import string
 warnings.filterwarnings("ignore")
-
 
 # Download NLTK resources (stopwords, punkt)
 nltk.download('stopwords')
@@ -34,20 +28,26 @@ nltk.download('punkt')
 nlp = spacy.load("en_core_web_sm")
 stop_words = stopwords.words('english')
 lzr = WordNetLemmatizer()
+
 # %%
 
 # %%
+
 # Importing YouTube comments data
+'''
 comm = pd.read_csv('D:\Prajwal\PCCOE\Major project\Youtube\Code\Fake_YouTube_Review_Detection\youtube_review_dataset.csv',
+                   encoding='utf8', error_bad_lines=False)
+'''
+comm = pd.read_csv('D:\Prajwal\PCCOE\Major project\Youtube\Code\Fake_YouTube_Review_Detection\youtube_review_dataset1.csv',
                    encoding='utf8', error_bad_lines=False)
 df = pd.DataFrame(comm)
 df.head()
 df = df.drop(['UserName', 'Time', 'Likes', 'Reply Count'], axis=1)
 df.head()
-# %%
 
 # %%
 
+# %%
 
 def text_processing(text):
     # convert text into lowercase
@@ -100,7 +100,6 @@ def text_processing(text):
 
     return text
 
-
 #%%
 
 sample = "ℍ𝕚 𝔼𝕧𝕖𝕣𝕪𝕠𝕟𝕖,,,,,,,.,./;/';à¤…à¤—à¤° à¤¯à¥‡ à¤¸à¤²à¤¾à¤° à¤®à¥‚à¤µà¥€ à¤¹à¥ˆ à¤¤à¥‹ à¤®à¥ˆ à¤¸à¤²à¤®à¤¾à¤¨ à¤–à¤¾à¤‚à¤¨ à¤¹à¥‚à¤,,,à¤¸à¤¾à¤¹à¥‹ à¤®à¥‚à¤µà¥€ à¤•à¤¾ðŸ˜‚ðŸ˜‚ðŸ˜‚'𝕀 𝕒𝕞 𝔸𝕟𝕜𝕚𝕥 𝔾𝕦𝕡𝕥𝕒 ðŸŒðŸ 𝕙𝕒𝕧𝕚𝕟𝕘 𝕥𝕙𝕖 𝕗𝕠𝕝𝕝𝕠𝕨𝕚𝕟𝕘 𝕂𝕒𝕘𝕘𝕝𝕖 𝕡𝕣𝕠𝕗𝕚𝕝𝕖 \n https://www.kaggle.com/nkitgupta 𝕒𝕟𝕕, 𝕀 𝕒𝕞 😊 𝕥𝕠 𝕔𝕣𝕖𝕒𝕥𝕖 𝕥𝕙𝕚𝕤 𝕟𝕠𝕥𝕖𝕓𝕠𝕠𝕜."
@@ -108,7 +107,9 @@ print(text_processing(sample))
 
 # Testing NLP - Sentiment Analysis using TextBlob
 #TextBlob("The movie is ok").sentiment
+
 # %%
+
 # Initialize the Progress Bar (tqdm) for visualizing the progress
 tqdm.pandas()
 
@@ -116,15 +117,17 @@ df['Processed_Comment'] = df['Comment'].fillna(
     '').progress_apply(text_processing)
 df = df[df['Processed_Comment'].str.len() > 0]
 
-
+'''
 # Extract 5 sequential samples from the `Processed_Comment` column
 sequential_samples = df['Processed_Comment'].iloc[0:10]
 
 sequential_samples.shape
 print(sequential_samples)
-# %%
+'''
+
 # %%
 
+# %%
 
 # Create a WordCloud object
 wordcloud = WordCloud(width=800, height=400, random_state=21, max_font_size=110).generate(
@@ -137,17 +140,8 @@ plt.axis('off')
 plt.show()
 
 # %%
-# %%
-'''
-from googletrans import Translator
-from tqdm.notebook import tqdm
 
-def hinglish_to_english(text):
-    translator = Translator()
-    translation = translator.translate(text, src='hi', dest='en')
-    return translation.text
-'''
-#import json
+# %%
 
 from googletrans import Translator
 def hinglish_to_english(text):
@@ -164,45 +158,20 @@ def hinglish_to_english(text):
         print(f"Error details: {e}")
         return ''
 
-# try
-
-from joblib import Parallel, delayed
-
-# Set the number of cores to use for parallel processing
-n_cores = 4
-
-# Apply the translation function using parallel processing
-df['English_Translation'] = Parallel(n_jobs=n_cores)(delayed(hinglish_to_english)(text) for text in df['Processed_Comment'].values)
-
-
-df['English_Translation'] = df['Processed_Comment'].applymap(
-    hinglish_to_english)
-#
-# Hinglish sentence
-hinglish_sentence = " khaana achha nahi hai pr service accha nahi tha"
-
-# Translating Hinglish to English
-english_translation = hinglish_to_english(hinglish_sentence)
-
-# Printing the result
-print("Hinglish Sentence:", hinglish_sentence)
-print("English Translation:", english_translation)
-# Apply the translation function to the 'Text' column and create a new column
-df['English_Translation'] = sequential_samples.progress_apply(
-    hinglish_to_english)
-
-
+'''
 # Apply the translation function to the 'Processed_Comment' column and create a new column
 df['English_Translation'] = sequential_samples.progress_apply(
     hinglish_to_english)
-
-# Save the DataFrame to a CSV file
-df.to_csv('translated_data1.csv', index=False)
-
+'''
 
 df['English_Translation'] = df['Processed_Comment'].progress_apply(
     hinglish_to_english)
+
+# Save the DataFrame to a CSV file
+df.to_csv('final_translated_data.csv', index=False)
+
 # %%
+
 # %%
 # Calculating the Sentiment Polarity
 pol = []  # list which will contain the polarity of the comments
@@ -250,8 +219,11 @@ plt.show()
 df.pol.value_counts()
 
 # df.pol.value_counts().plot.bar()
+
 # %%
+
+#%%
 # Use raw string literals to avoid escape characters
 df.to_csv(
-    r'D:\Prajwal\PCCOE\Major project\Youtube\Code\Fake_YouTube_Review_Detection\b.csv')
+    r'D:\Prajwal\PCCOE\Major project\Youtube\Code\Fake_YouTube_Review_Detection\a.csv')
 # %%
