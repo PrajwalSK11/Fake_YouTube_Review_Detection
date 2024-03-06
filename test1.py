@@ -102,9 +102,6 @@ def text_processing(text):
 
 #%%
 
-sample = "ℍ𝕚 𝔼𝕧𝕖𝕣𝕪𝕠𝕟𝕖,,,,,,,.,./;/';à¤…à¤—à¤° à¤¯à¥‡ à¤¸à¤²à¤¾à¤° à¤®à¥‚à¤µà¥€ à¤¹à¥ˆ à¤¤à¥‹ à¤®à¥ˆ à¤¸à¤²à¤®à¤¾à¤¨ à¤–à¤¾à¤‚à¤¨ à¤¹à¥‚à¤,,,à¤¸à¤¾à¤¹à¥‹ à¤®à¥‚à¤µà¥€ à¤•à¤¾ðŸ˜‚ðŸ˜‚ðŸ˜‚'𝕀 𝕒𝕞 𝔸𝕟𝕜𝕚𝕥 𝔾𝕦𝕡𝕥𝕒 ðŸŒðŸ 𝕙𝕒𝕧𝕚𝕟𝕘 𝕥𝕙𝕖 𝕗𝕠𝕝𝕝𝕠𝕨𝕚𝕟𝕘 𝕂𝕒𝕘𝕘𝕝𝕖 𝕡𝕣𝕠𝕗𝕚𝕝𝕖 \n https://www.kaggle.com/nkitgupta 𝕒𝕟𝕕, 𝕀 𝕒𝕞 😊 𝕥𝕠 𝕔𝕣𝕖𝕒𝕥𝕖 𝕥𝕙𝕚𝕤 𝕟𝕠𝕥𝕖𝕓𝕠𝕠𝕜."
-print(text_processing(sample))
-
 # Testing NLP - Sentiment Analysis using TextBlob
 #TextBlob("The movie is ok").sentiment
 
@@ -116,6 +113,7 @@ tqdm.pandas()
 df['Processed_Comment'] = df['Comment'].fillna(
     '').progress_apply(text_processing)
 df = df[df['Processed_Comment'].str.len() > 0]
+df.to_csv('cleaned_data.csv', index=False)
 
 '''
 # Extract 5 sequential samples from the `Processed_Comment` column
@@ -124,20 +122,6 @@ sequential_samples = df['Processed_Comment'].iloc[0:10]
 sequential_samples.shape
 print(sequential_samples)
 '''
-
-# %%
-
-# %%
-
-# Create a WordCloud object
-wordcloud = WordCloud(width=800, height=400, random_state=21, max_font_size=110).generate(
-    df['Processed_Comment'].str.cat(sep=' '))
-
-# Display the generated image
-plt.figure(figsize=(12, 8))
-plt.imshow(wordcloud, interpolation="bilinear")
-plt.axis('off')
-plt.show()
 
 # %%
 
@@ -168,9 +152,83 @@ df['English_Translation'] = df['Processed_Comment'].progress_apply(
     hinglish_to_english)
 
 # Save the DataFrame to a CSV file
-df.to_csv('final_translated_data.csv', index=False)
+df.to_csv('english_translated_data.csv', index=False)
+
+#alternative way of loading processing the csv file for futher use.
+import pickle
+
+# Read the processed data from the CSV file
+df = pd.read_csv(r'D:\Prajwal\PCCOE\Major project\Youtube\Code\Fake_YouTube_Review_Detection\english_translated_data.csv')
+
+# Save the processed DataFrame to a Pickle file
+with open(r'D:\Prajwal\PCCOE\Major project\Youtube\Code\Fake_YouTube_Review_Detection\processed_data.pkl', 'wb') as file:
+    pickle.dump(df, file)
+
+# Load the data from the Pickle file
+with open(r'D:\Prajwal\PCCOE\Major project\Youtube\Code\Fake_YouTube_Review_Detection\processed_data.pkl', 'rb') as file:
+    df = pickle.load(file)
+df.to_csv('cleanedd_data.csv', index=False)
 
 # %%
+
+# %%
+
+# Create a WordCloud object
+wordcloud = WordCloud(width=800, height=400, random_state=21, max_font_size=110).generate(
+    df['English_Translation'].str.cat(sep=' '))
+
+# Display the generated image
+plt.figure(figsize=(12, 8))
+plt.imshow(wordcloud, interpolation="bilinear")
+plt.axis('off')
+plt.show()
+
+# %%
+
+#%%
+
+from nltk import FreqDist
+'''
+def tokenize_and_pos(text):
+    doc = nlp(text)
+    return [(token.text, token.pos_) for token in doc]
+'''
+def tokenize_and_pos(text):
+    # Check for NaN values
+    if pd.isna(text):
+        return []
+
+    # Tokenize and add POS tagging
+    doc = nlp(text)
+    return [(token.text, token.pos_) for token in doc]
+
+# Apply the function with tqdm progress bar
+df['Tokenized_POS'] = tqdm(df['English_Translation'].apply(tokenize_and_pos), desc="Processing", unit="comments", dynamic_ncols=True)
+
+# Tokenize and add POS tagging
+df['Tokenized_POS'] = df['English_Translation'].progress_apply(tokenize_and_pos)
+
+# Display the top 100 words based on frequency
+all_tokens = [token for tokens_pos in df['Tokenized_POS'] for token, pos in tokens_pos]
+freq_dist = FreqDist(all_tokens)
+top_words = freq_dist.most_common(10)
+
+# Plot a bar chart for the top 100 words
+plt.figure(figsize=(12, 8))
+plt.bar(range(len(top_words)), [count for word, count in top_words], align='center')
+plt.xticks(range(len(top_words)), [word for word, count in top_words], rotation=45)
+plt.xlabel('Words')
+plt.ylabel('Frequency')
+plt.title('Top 100 Words Frequency Distribution')
+plt.show()
+
+# Save the DataFrame to a CSV file
+df.to_csv('processed_data_with_POS.csv', index=False)
+
+# Display the DataFrame with POS tagging
+#print(df[['English_Translation', 'Tokenized_POS']])
+
+#%%
 
 # %%
 # Calculating the Sentiment Polarity
@@ -223,7 +281,9 @@ df.pol.value_counts()
 # %%
 
 #%%
+
 # Use raw string literals to avoid escape characters
 df.to_csv(
     r'D:\Prajwal\PCCOE\Major project\Youtube\Code\Fake_YouTube_Review_Detection\a.csv')
+
 # %%
