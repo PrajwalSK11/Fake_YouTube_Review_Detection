@@ -37,7 +37,7 @@ lzr = WordNetLemmatizer()
 from googleapiclient.discovery import build
 
 # YouTube API key
-api_key = "AIzaSyChGVWfTTNtDpC_7mRR-qEMcM1vhM6R09M"
+api_key = "YOUR_API"
 
 # Function to extract comments from a YouTube video
 def extract_youtube_comments(video_url, api_key):
