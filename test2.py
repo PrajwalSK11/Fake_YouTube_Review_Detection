@@ -76,7 +76,7 @@ def extract_youtube_comments(video_url, api_key):
     return comments_list
 
 # Sample YouTube video URL
-youtube_video_url = "https://www.youtube.com/watch?v=FJhc_zzO-Ig"
+youtube_video_url = "Youtube_Video_URL"
 
 # Extracting comments from the specified YouTube video
 comments = extract_youtube_comments(youtube_video_url, api_key)
@@ -332,7 +332,7 @@ def pos_with_sentiment(comment):
     # Iterate through each token in the comment
     for token in doc:
         # If the token is a noun, analyze its sentiment along with its surrounding adjectives
-        if token.pos_ in ["NOUN", "PROPN"]:
+        if token.pos_ in ["NOUN"]:
             aspect = token.text
             sentiment = None
             
