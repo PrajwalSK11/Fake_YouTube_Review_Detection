@@ -17,7 +17,7 @@ import spacy
 import seaborn as sns
 import matplotlib.pyplot as plt
 import pandas as pd
-import numpy as np
+#import numpy as np
 import pickle
 pd.set_option('display.max_colwidth', 200)
 warnings.filterwarnings("ignore")
@@ -33,59 +33,13 @@ lzr = WordNetLemmatizer()
 
 # %%
 
-# Importing YouTube API
-from googleapiclient.discovery import build
-
-# YouTube API key
-api_key = "YOUR_API"
-
-# Function to extract comments from a YouTube video
-def extract_youtube_comments(video_url, api_key):
-    # Extracting video ID from URL
-    video_id = video_url.split("=")[-1]
-    
-    # Building YouTube service
-    youtube_service = build("youtube", "v3", developerKey=api_key)
-    
-    # Retrieving video title
-    video_request = youtube_service.videos().list(
-        part="snippet",
-        id=video_id
-    )
-    video_response = video_request.execute()
-    video_title = video_response["items"][0]["snippet"]["title"]
-    
-    # Retrieving comments for the video
-    comments_list = []
-    next_page_token = None
-    while True:
-        comments_request = youtube_service.commentThreads().list(
-            part="snippet",
-            videoId=video_id,
-            maxResults=100,
-            pageToken=next_page_token
-        )
-        comments_response = comments_request.execute()
-        for item in comments_response["items"]:
-            comment = item["snippet"]["topLevelComment"]["snippet"]["textOriginal"]
-            comments_list.append((video_title, comment))  # Append title along with comment
-        next_page_token = comments_response.get("nextPageToken")
-        if not next_page_token:
-            break
-    
-    return comments_list
-
-# Sample YouTube video URL
-youtube_video_url = "Youtube_Video_URL"
-
-# Extracting comments from the specified YouTube video
-comments = extract_youtube_comments(youtube_video_url, api_key)
-
-# Create a DataFrame from the extracted comments
-df = pd.DataFrame(comments, columns=["Video Title", "Comment"])
-
-# Display the DataFrame
-print(df.head())
+# Importing YouTube comments data
+comm = pd.read_csv('D:\Prajwal\PCCOE\Major project\Youtube\Code\Fake_YouTube_Review_Detection\Test1/youtube_review_dataset.csv',
+                   encoding='utf8', error_bad_lines=False)
+df = pd.DataFrame(comm)
+df.head()
+df = df.drop(['UserName', 'Time', 'Likes', 'Reply Count'], axis=1)
+df.head()
 
 # %%
 
@@ -144,9 +98,6 @@ def text_processing(text):
 
 #%%
 
-# Testing NLP - Sentiment Analysis using TextBlob
-#TextBlob("The movie is ok").sentiment
-
 # %%
 
 # Initialize the Progress Bar (tqdm) for visualizing the progress
@@ -155,6 +106,8 @@ tqdm.pandas()
 df['Processed_Comment'] = df['Comment'].fillna(
     '').progress_apply(text_processing)
 df = df[df['Processed_Comment'].str.len() > 0]
+
+'''
 df.to_csv('cleaned_data.csv', index=False)
 
 # Read the processed data from the CSV file
@@ -167,7 +120,8 @@ with open(r'D:\Prajwal\PCCOE\Major project\Youtube\Code\Fake_YouTube_Review_Dete
 # Load the data from the Pickle file
 with open(r'D:\Prajwal\PCCOE\Major project\Youtube\Code\Fake_YouTube_Review_Detection\cleaned_data.pkl', 'rb') as file:
     df = pickle.load(file)
-    
+'''
+
 # %%
 
 # %%
@@ -191,9 +145,9 @@ def hinglish_to_english(text):
 tqdm.pandas()
 df['English_Translation'] = df['Processed_Comment'].progress_apply(
     hinglish_to_english)
-
+'''
 # Save the DataFrame to a CSV file
-df.to_csv('english_translated_data.csv', index=False)
+#df.to_csv('english_translated_data.csv', index=False)
 
 # Read the processed data from the CSV file
 #df = pd.read_csv(r'D:\Prajwal\PCCOE\Major project\Youtube\Code\Fake_YouTube_Review_Detection\english_translated_data.csv')
@@ -205,6 +159,7 @@ with open(r'D:\Prajwal\PCCOE\Major project\Youtube\Code\Fake_YouTube_Review_Dete
 # Load the data from the Pickle file
 with open(r'D:\Prajwal\PCCOE\Major project\Youtube\Code\Fake_YouTube_Review_Detection\processed_data.pkl', 'rb') as file:
     df = pickle.load(file)
+'''
 
 # %%
 
@@ -223,8 +178,7 @@ plt.show()
 # %%
 
 #%%
-# Load the spaCy model
-nlp = spacy.load("en_core_web_sm")
+
 from nltk import FreqDist
 def tokenize_and_pos(text):
     # Check for NaN values
@@ -254,6 +208,7 @@ plt.ylabel('Frequency')
 plt.title('Top Words Frequency Distribution')
 plt.show()
 
+'''
 # Save the DataFrame to a CSV file
 #df.to_csv('processed_data_with_POS.csv', index=False)
 
@@ -264,9 +219,7 @@ with open(r'D:\Prajwal\PCCOE\Major project\Youtube\Code\Fake_YouTube_Review_Dete
 # Load the data from the Pickle file
 with open(r'D:\Prajwal\PCCOE\Major project\Youtube\Code\Fake_YouTube_Review_Detection\processed_data_with_POS.pkl', 'rb') as file:
     df = pickle.load(file)
-
-# Display the DataFrame with POS tagging
-#print(df[['English_Translation', 'Tokenized_POS']])
+'''
 
 #%%
 
@@ -274,7 +227,7 @@ with open(r'D:\Prajwal\PCCOE\Major project\Youtube\Code\Fake_YouTube_Review_Dete
 
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 tqdm.pandas()
-#df.fillna(method='bfill', inplace=True)
+df.fillna(method='bfill', inplace=True)
 
 # Initialize the SentimentIntensityAnalyzer
 sent_analyser = SentimentIntensityAnalyzer()
@@ -299,6 +252,7 @@ def sentiment(text):
     else:
         return "Neutral"
 df["Sentiment"] = df["English_Translation"].progress_apply(sentiment)
+
 # Plot the countplot
 plt.figure(figsize=(10, 10))
 sns.set_style("whitegrid")
@@ -306,6 +260,8 @@ ax = sns.countplot(x="Sentiment", data=df, palette=dict(Neutral="blue", Positive
 
 sentiment_counts = df['Sentiment'].value_counts()
 print("Sentiment Counts:\n" + str(sentiment_counts))
+
+'''
 df.to_csv('till_senti.csv', index=False)
 
 # Save the processed DataFrame to a Pickle file
@@ -315,10 +271,7 @@ with open(r'D:\Prajwal\PCCOE\Major project\Youtube\Code\Fake_YouTube_Review_Dete
 # Load the data from the Pickle file
 with open(r'D:\Prajwal\PCCOE\Major project\Youtube\Code\Fake_YouTube_Review_Detection\till_senti.pkl', 'rb') as file:
     df = pickle.load(file)
-
-#try
-import spacy
-
+'''
 # Load the spaCy model
 nlp = spacy.load("en_core_web_sm")
 
@@ -331,43 +284,42 @@ def pos_with_sentiment(comment):
     
     # Iterate through each token in the comment
     for token in doc:
-        # If the token is a noun, analyze its sentiment along with its surrounding adjectives
-        if token.pos_ in ["NOUN"]:
+        # If the token is a noun, adjective, or proper noun, consider it as a potential aspect
+        if token.pos_ in ["NOUN", "ADJ", "PROPN"]:
             aspect = token.text
-            sentiment = None
             
-            # Get the index of the token in the document
-            token_index = token.i
-            
-            # Find adjectives in a window around the noun
-            adjectives = []
-            for i in range(max(token_index - 3, 0), min(token_index + 4, len(doc))):
-                if doc[i].pos_ == "ADJ":
-                    adjectives.append(doc[i].text)
-            
-            # Analyze sentiment using TextBlob
-            analysis = TextBlob(" ".join(adjectives + [aspect]))
-            polarity = analysis.sentiment.polarity
-            
-            # Convert numerical polarity to sentiment label
-            if polarity > 0:
-                sentiment = "Positive"
-            elif polarity < 0:
-                sentiment = "Negative"
-            else:
-                sentiment = "Neutral"
+            # Get the sentiment of the aspect based on its context in the comment
+            sentiment = get_aspect_sentiment(token)
             
             # Store the aspect sentiment in the dictionary
             aspect_sentiments[aspect] = sentiment
     
     return aspect_sentiments
 
+def get_aspect_sentiment(token):
+    # Get the context of the token (surrounding words)
+    context_words = [left_token.text for left_token in token.lefts] + [token.text] + [right_token.text for right_token in token.rights]
+    
+    # Analyze sentiment using TextBlob on the context of the aspect
+    analysis = TextBlob(" ".join(context_words))
+    polarity = analysis.sentiment.polarity
+    
+    # Convert numerical polarity to sentiment label
+    if polarity > 0:
+        sentiment = "Positive"
+    elif polarity < 0:
+        sentiment = "Negative"
+    else:
+        sentiment = "Neutral"
+    
+    return sentiment
+
 # Apply the function to create a new column 'Aspects_Sentiments'
 df['Aspects_Sentiments'] = df['English_Translation'].progress_apply(pos_with_sentiment)
 
 # Display the DataFrame with Aspects and their Sentiments
-print(df[['English_Translation', 'Aspects_Sentiments']])
+#print(df[['English_Translation', 'Aspects_Sentiments']])
 
-#df.to_csv('aspect.csv', index=False)
+df.to_csv('aspect.csv', index=False)
 
 # %%
