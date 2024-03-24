@@ -169,8 +169,8 @@ def process_comments(comments):
 # Main function
 def main():
     # YouTube API key and video URL
-    api_key = "AIzaSyBu3nBiDk0_FjHbdoVYZlKuTlBBm8VzsKk"
-    youtube_video_url = "https://www.youtube.com/watch?v=EHo0iFU1Fkc"
+    api_key = "Your_API"
+    youtube_video_url = "Video_URl"
     
     # Extract comments
     comments = extract_youtube_comments(youtube_video_url, api_key)
