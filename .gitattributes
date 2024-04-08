@@ -1,0 +1,4 @@
+checkpoints/ATEPC_ENGLISH_CHECKPOINT/fast_lcf_atepc_English_cdw_apcacc_82.36_apcf1_81.89_atef1_75.43/*.txt filter=lfs diff=lfs merge=lfs -text
+checkpoints/ATEPC_ENGLISH_CHECKPOINT/fast_lcf_atepc_English_cdw_apcacc_82.36_apcf1_81.89_atef1_75.43/*.config filter=lfs diff=lfs merge=lfs -text
+checkpoints/ATEPC_ENGLISH_CHECKPOINT/fast_lcf_atepc_English_cdw_apcacc_82.36_apcf1_81.89_atef1_75.43/*.state_dict filter=lfs diff=lfs merge=lfs -text
+checkpoints/ATEPC_ENGLISH_CHECKPOINT/fast_lcf_atepc_English_cdw_apcacc_82.36_apcf1_81.89_atef1_75.43/*.tokenizer filter=lfs diff=lfs merge=lfs -text
