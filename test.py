@@ -1,61 +1,139 @@
-import re
-import unicodedata
-from string import punctuation
-from collections import defaultdict
+# %%
 
-import pandas as pd
-import numpy as np
+# Data processing packages
+from wordcloud import WordCloud
+from string import punctuation
+from nltk.stem import WordNetLemmatizer
+from nltk.tokenize import word_tokenize
+from tqdm import tqdm
+from nltk.corpus import stopwords
+from textblob import TextBlob
+import unicodedata
+import re
+import warnings
+import nltk
+import spacy
 import seaborn as sns
 import matplotlib.pyplot as plt
-import spacy
-import nltk
-from nltk.stem import WordNetLemmatizer
-from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
-from textblob import TextBlob
-from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
-from googletrans import Translator
-from googleapiclient.discovery import build
-from tqdm import tqdm
-from wordcloud import WordCloud
-    
+import pandas as pd
+#import numpy as np
+import pickle
+from pyabsa import available_checkpoints  # Import ABSA related modules
+from pyabsa import ATEPCCheckpointManager
+warnings.filterwarnings("ignore")
 
 # Download NLTK resources (stopwords, punkt)
 nltk.download('stopwords')
 nltk.download('punkt')
 
-# Set up NLTK and spaCy
-stop_words = set(stopwords.words('english'))
-wordnet_lemmatizer = WordNetLemmatizer()
-nlp = spacy.load("en_core_web_sm")
+stop_words = stopwords.words('english')
+lzr = WordNetLemmatizer()
 
-# Initialize Google Translator and Sentiment Analyzer
-translator = Translator()
-sent_analyzer = SentimentIntensityAnalyzer()
-tqdm.pandas()
+# %%
 
-# Function to process text data
-def process_text(text):
+# %%
+
+# Importing YouTube comments data
+comm = pd.read_csv('D:\Prajwal\PCCOE\Major project\Youtube\Fake_YouTube_Review_Detection\youtube_review_dataset.csv',
+                   encoding='utf8')
+df = pd.DataFrame(comm)
+df.head()
+df = df.drop(['UserName', 'Time', 'Likes', 'Reply Count'], axis=1)
+df.head()
+
+# %%
+
+# %%
+
+def text_processing(text):
+    # convert text into lowercase
     text = text.lower()
-    text = unicodedata.normalize('NFKD', text).encode('ascii', 'ignore').decode('utf-8', 'ignore')
-    text = re.sub(r'http\S+', '', text)
-    text = re.sub(r'[^\x00-\x7F]+', '', text)
+
+    # Normalize the string
+    text = unicodedata.normalize('NFKD', text).encode(
+        'ascii', 'ignore').decode('utf-8', 'ignore')
+
+    # Remove URLs
+    text = re.sub(r"http\S+", " ", text)
+
+    # Remove non-ASCII characters
+    text = re.sub(r'[^\x00-\x7F]+', ' ', text)
+
+    # Remove repeated "Y" characters
     text = re.sub(r'(Y)\1+', r'\1', text)
+
+    # Remove repeated "y" characters (case-insensitive)
     text = re.sub(r'(y)\1+', r'\1', text, flags=re.IGNORECASE)
+
+    # remove new line characters in text
     text = re.sub(r'\n', ' ', text)
-    text = re.sub('[%s]' % re.escape(punctuation), "", text)
-    text = re.sub(r'\d+', '', text)
-    text = re.sub("^a-zA-Z0-9$,.", "", text)
+
+    # remove weird characters
+    text = re.sub(r'[^\x00-\x7F]+', ' ', text)
+
+    # remove punctuations from text
+    text = re.sub('[%s]' % re.escape(punctuation), " ", text)
+
+    # Remove numeric values from text
+    text = re.sub(r'\d+', ' ', text)
+
+    # remove references and hashtags from text
+    text = re.sub("^a-zA-Z0-9$,.", " ", text)
+    text = re.sub(r"http\S+", " ", text)
+
+    # remove multiple spaces from text
     text = re.sub(r'\s+', ' ', text, flags=re.I)
+
+    # remove special characters from text
     text = re.sub(r'\W', ' ', text)
-    text = ' '.join([wordnet_lemmatizer.lemmatize(word) for word in word_tokenize(text) if word not in stop_words])
+
+    # adding lemma in it
+    text = ' '.join([word for word in word_tokenize(text)
+                    if word not in stop_words])
+
+    # lemmatizer using WordNetLemmatizer from nltk package
+    text = ' '.join([lzr.lemmatize(word) for word in word_tokenize(text)])
+
     return text
 
-# Function to translate Hinglish text to English
+#%%
+
+# %%
+
+# Initialize the Progress Bar (tqdm) for visualizing the progress
+tqdm.pandas()
+
+df['Processed_Comment'] = df['Comment'].fillna(
+    '').progress_apply(text_processing)
+df = df[df['Processed_Comment'].str.len() > 0]
+
+'''
+df.to_csv('cleaned_data.csv', index=False)
+
+# Read the processed data from the CSV file
+#df = pd.read_csv(r'D:\Prajwal\PCCOE\Major project\Youtube\Code\Fake_YouTube_Review_Detection\cleaned_data.csv')
+
+# Save the processed DataFrame to a Pickle file
+with open(r'D:\Prajwal\PCCOE\Major project\Youtube\Code\Fake_YouTube_Review_Detection\cleaned_data.pkl', 'wb') as file:
+    pickle.dump(df, file)
+
+# Load the data from the Pickle file
+with open(r'D:\Prajwal\PCCOE\Major project\Youtube\Code\Fake_YouTube_Review_Detection\cleaned_data.pkl', 'rb') as file:
+    df = pickle.load(file)
+'''
+
+# %%
+
+# %%
+
+from googletrans import Translator
 def hinglish_to_english(text):
     if text is None or pd.isnull(text) or not text.strip():
-        return ''
+        return ''  # Return an empty string for None, NaN, or empty values
+
+    translator = Translator()
     try:
+        translator = Translator()
         translation = translator.translate(text, src='hi', dest='en')
         return translation.text
     except Exception as e:
@@ -63,144 +141,194 @@ def hinglish_to_english(text):
         print(f"Error details: {e}")
         return ''
 
-# Function to tokenize and perform POS tagging
-def tokenize_and_pos_tag(comment):
-    # Tokenize the comment
-    tokens = nltk.word_tokenize(comment)
-    
-    # Perform POS tagging
-    pos_tags = nltk.pos_tag(tokens)
-    
-    return pos_tags
-    
-# Function to generate a word cloud
-def generate_word_cloud(aspect_terms):
-    # Concatenate aspect terms into a single string
-    text = ' '.join(aspect_terms)
-    
-    # Generate word cloud
-    wordcloud = WordCloud(width=800, height=400, background_color ='white').generate(text)
-    
-    # Display the word cloud
-    plt.figure(figsize=(10, 5))
-    plt.imshow(wordcloud, interpolation='bilinear')
-    plt.axis('off')
-    plt.show()
-    
-# Function to calculate sentiment polarity
-def calculate_polarity(text):
-    if isinstance(text, float):
-        return 0
-    return sent_analyzer.polarity_scores(text)["compound"]
+# Initialize the Progress Bar (tqdm) for visualizing the progress
+tqdm.pandas()
+df['English_Translation'] = df['Processed_Comment'].progress_apply(
+    hinglish_to_english)
+'''
+# Save the DataFrame to a CSV file
+#df.to_csv('english_translated_data.csv', index=False)
 
-# Function to classify sentiment
-def classify_sentiment(text):
-    polarity_score = calculate_polarity(text)
-    if polarity_score > 0:
+# Read the processed data from the CSV file
+#df = pd.read_csv(r'D:\Prajwal\PCCOE\Major project\Youtube\Fake_YouTube_Review_Detection\english_translated_data.csv')
+
+# Save the processed DataFrame to a Pickle file
+with open(r'D:\Prajwal\PCCOE\Major project\Youtube\Fake_YouTube_Review_Detection\english.pkl', 'wb') as file:
+    pickle.dump(df, file)
+
+# Load the data from the Pickle file
+with open(r'D:\Prajwal\PCCOE\Major project\Youtube\Fake_YouTube_Review_Detection\english.pkl', 'rb') as file:
+    df = pickle.load(file)
+'''
+import pandas as pd
+import missingno as msno
+plt.figure(figsize=(25, 20))
+msno.matrix(df, color=[0.2, 0.4, 1])
+plt.title('Visualization of Missing Values', fontsize=24)
+plt.xlabel('Columns', fontsize=24)
+plt.ylabel('Rows', fontsize=24)
+plt.show()
+# %%
+
+# %%
+
+# Create a WordCloud object
+wordcloud = WordCloud(width=800, height=400, random_state=21, max_font_size=110).generate(
+    df['English_Translation'].str.cat(sep=' '))
+
+# Display the generated image
+plt.figure(figsize=(12, 8))
+plt.imshow(wordcloud, interpolation="bilinear")
+plt.axis('off')
+plt.show()
+
+# %%
+
+#%%
+nlp = spacy.load("en_core_web_sm")
+from nltk import FreqDist
+def tokenize_and_pos(text):
+    # Check for NaN values
+    if pd.isna(text):
+        return []
+
+    # Tokenize and add POS tagging
+    doc = nlp(text)
+    return [(token.text, token.pos_) for token in doc]
+
+# Initialize the Progress Bar (tqdm) for visualizing the progress
+tqdm.pandas()
+# Tokenize and add POS tagging
+df['Tokenized_POS'] = df['English_Translation'].progress_apply(tokenize_and_pos)
+
+# Display the top words based on frequency
+all_tokens = [token for tokens_pos in df['Tokenized_POS'] for token, pos in tokens_pos]
+freq_dist = FreqDist(all_tokens)
+top_words = freq_dist.most_common(10)
+
+# Plot a bar chart for the top words
+plt.figure(figsize=(12, 8))
+plt.bar(range(len(top_words)), [count for word, count in top_words], align='center')
+plt.xticks(range(len(top_words)), [word for word, count in top_words], rotation=45)
+plt.xlabel('Words')
+plt.ylabel('Frequency')
+plt.title('Top Words Frequency Distribution')
+plt.show()
+
+#%%
+
+# %%
+
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+tqdm.pandas()
+df.fillna(method='bfill', inplace=True)
+
+# Initialize the SentimentIntensityAnalyzer
+sent_analyser = SentimentIntensityAnalyzer()
+
+def polarity(text):
+    # Check if the input is a float
+    if isinstance(text, float):
+        return 0  # Return a neutral sentiment for float values
+
+    # Calculate the compound polarity score using VADER
+    return sent_analyser.polarity_scores(text)["compound"]
+# Apply the sentiment analysis function to the "English_Translation" column
+df["Polarity"] = df["English_Translation"].progress_apply(polarity)
+
+plt.figure(figsize=(12, 8))
+sns.histplot(df['Polarity'], bins=20, kde=True)
+plt.title('Distribution of Polarity Scores')
+plt.xlabel('Polarity Score')
+plt.ylabel('Frequency')
+plt.show()
+
+def sentiment(text):
+    #analysis = TextBlob(text)
+    Polarity=polarity(text)
+    if Polarity > 0:
         return "Positive"
-    elif polarity_score < 0:
+    elif Polarity < 0:
         return "Negative"
     else:
         return "Neutral"
+df["Sentiment"] = df["English_Translation"].progress_apply(sentiment)
 
-# Function to extract comments from a YouTube video
-def extract_youtube_comments(video_url, api_key):
-    video_id = video_url.split("=")[-1]
-    youtube_service = build("youtube", "v3", developerKey=api_key)
-    video_request = youtube_service.videos().list(part="snippet", id=video_id)
-    video_response = video_request.execute()
-    video_title = video_response["items"][0]["snippet"]["title"]
+# Plot the countplot
+plt.figure(figsize=(10, 10))
+sns.set_style("whitegrid")
+ax = sns.countplot(x="Sentiment", data=df, palette=dict(Neutral="blue", Positive="green", Negative="red"))
+
+sentiment_counts = df['Sentiment'].value_counts()
+print("Sentiment Counts:\n" + str(sentiment_counts))
+
+# Load the spaCy model
+nlp = spacy.load("en_core_web_sm")
+
+# Function to extract aspects and sentiments for each comment
+def extract_aspects_and_sentiments(comments):
+    # Initialize an empty list to store the results
+    aspect_sentiment_results = []
     
-    comments_list = []
-    next_page_token = None
-    while True:
-        comments_request = youtube_service.commentThreads().list(
-            part="snippet",
-            videoId=video_id,
-            maxResults=100,
-            pageToken=next_page_token
-        )
-        comments_response = comments_request.execute()
-        for item in comments_response["items"]:
-            comment = item["snippet"]["topLevelComment"]["snippet"]["textOriginal"]
-            comments_list.append((video_title, comment))
-        next_page_token = comments_response.get("nextPageToken")
-        if not next_page_token:
-            break
-    return comments_list
+    # Initialize the ABSA model
+    aspect_extractor = ATEPCCheckpointManager.get_aspect_extractor(checkpoint='english', auto_device=True)
+    
+    # Iterate through each comment
+    for comment in tqdm(comments):
+        # Extract aspects and sentiments for the current comment
+        result = aspect_extractor.extract_aspect(inference_source=[comment], pred_sentiment=True)
+        
+        # Append the result to the list
+        aspect_sentiment_results.append(result)
+    
+    return aspect_sentiment_results
 
-# Function to extract aspect terms from a comment along with sentiment analysis
-def extract_aspect_terms_with_sentiment(comment):
-    aspect_sentiments = {}
-    aspect_terms = []
-    compound_terms = []
-    lines = comment.split('.')
-    for line in lines:
-        doc = nlp(line)
-        for token in doc:
-            if token.pos_ == 'NOUN':
-                aspect = token.text
-                analysis = TextBlob(aspect)
-                polarity = analysis.sentiment.polarity
-                if polarity > 0:
-                    sentiment = "Positive"
-                elif polarity < 0:
-                    sentiment = "Negative"
-                else:
-                    sentiment = "Neutral"
-                aspect_terms.append(aspect)
-                aspect_sentiments[aspect] = sentiment
-            elif token.dep_ == 'compound':
-                compound_terms.append(token.text)
-    return aspect_terms, aspect_sentiments, compound_terms
+# Extract the first 100 entries from a specific column (e.g., 'Processed_Comment')
+comments_subset = df['English_Translation'].head(10)
+
+# Now, you can pass this subset of comments to your processing function
+aspect_results = extract_aspects_and_sentiments(comments_subset)
+
+# Apply aspect extraction to the 'English_Translation' column of the DataFrame
+#aspect_results = extract_aspects_and_sentiments(df['English_Translation'])
 
 
-# Function to process comments
-def process_comments(comments):
-    df = pd.DataFrame(comments, columns=["Video Title", "Comment"])
-    df['Processed_Comment'] = df['Comment'].fillna('').progress_apply(process_text)
-    df = df[df['Processed_Comment'].str.len() > 0]
-    df['English_Translation'] = df['Processed_Comment'].progress_apply(hinglish_to_english)
-    df['POS_Tags'] = df['English_Translation'].progress_apply(tokenize_and_pos_tag)
-    #df['Polarity'] = df['English_Translation'].progress_apply(calculate_polarity)
-    #df['Sentiment'] = df['English_Translation'].progress_apply(classify_sentiment)
-    return df
+# Initialize an empty list to store aspect-sentiment pairs as dictionaries
+aspect_sentiment_pairs = []
 
-# Main function
-def main():
-    # YouTube API key and video URL
-    api_key = "Your_API"
-    youtube_video_url = "Video_URl"
+# Iterate through each comment in the DataFrame and extract the corresponding aspect-sentiment pair
+for result in aspect_results:
+    # Check if the result list is empty
+    if result:
+        # Extract aspect and sentiment from the first dictionary in the list
+        aspect = result[0].get('aspect', None)
+        sentiment = result[0].get('sentiment', None)
+        
+        # Create a dictionary with aspect and sentiment as key-value pairs
+        aspect_sentiment_dict = {'Aspect': aspect, 'Sentiment': sentiment}
+    else:
+        # If result list is empty, create a dictionary with None for aspect and sentiment
+        aspect_sentiment_dict = {'Aspect': None, 'Sentiment': None}
     
-    # Extract comments
-    comments = extract_youtube_comments(youtube_video_url, api_key)
-    
-    # Process and analyze comments
-    df = process_comments(comments)
-    
-    # Extract aspect terms and sentiments
-    aspect_terms_list = []
-    aspect_sentiments_list = []
-    compound_terms_list = []
-    for comment in tqdm(df['English_Translation']):
-        aspect_terms, aspect_sentiments, compound_terms = extract_aspect_terms_with_sentiment(comment)
-        aspect_terms_list.append(aspect_terms)
-        aspect_sentiments_list.append(aspect_sentiments)
-        compound_terms_list.append(compound_terms)
-    
-    # Add extracted aspect terms, aspect sentiments, and compound terms to the DataFrame
-    df['Compound_Terms'] = compound_terms_list
-    df['Aspect_Terms'] = aspect_terms_list
-    df['Aspect_Sentiments'] = aspect_sentiments_list
-    generate_word_cloud(df['Aspect_Terms'][0])
-    
-    # Display the DataFrame with added aspect terms and sentiments
-    print(df.head())
-    
-    # Save DataFrame to a CSV file
-    df.to_csv('youtube_comments_dataset.csv', index=False)
+    # Append the aspect-sentiment dictionary to the list
+    aspect_sentiment_pairs.append(aspect_sentiment_dict)
 
-# Call the main function
-if __name__ == "__main__":
-    main()
-    
+# Add the aspect-sentiment pairs as a new column to the DataFrame
+df['Aspect_Sentiment'] = aspect_sentiment_pairs
+
+
+# Display the DataFrame with the added aspect-sentiment column
+print(df.head())
+plt.figure(figsize=(12, 8))
+df_aspect_sentiment = df.explode('Aspect_Sentiment')
+sns.countplot(x='Aspect_Sentiment', data=df_aspect_sentiment)
+plt.title('Aspect-Sentiment Distribution')
+plt.xlabel('Aspect-Sentiment Pair')
+plt.ylabel('Count')
+plt.xticks(rotation=45)
+plt.legend(title='Sentiment')
+plt.show()
+
+df.to_csv('test_aspects.csv', index=False)
+
+# %%
