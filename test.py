@@ -7,7 +7,6 @@ from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import word_tokenize
 from tqdm import tqdm
 from nltk.corpus import stopwords
-from textblob import TextBlob
 import unicodedata
 import re
 import warnings
@@ -16,7 +15,7 @@ import spacy
 import seaborn as sns
 import matplotlib.pyplot as plt
 import pandas as pd
-#import numpy as np
+import numpy as np
 import pickle
 from pyabsa import available_checkpoints  # Import ABSA related modules
 from pyabsa import ATEPCCheckpointManager
@@ -243,25 +242,6 @@ plt.xlabel('Polarity Score')
 plt.ylabel('Frequency')
 plt.show()
 
-def sentiment(text):
-    #analysis = TextBlob(text)
-    Polarity=polarity(text)
-    if Polarity > 0:
-        return "Positive"
-    elif Polarity < 0:
-        return "Negative"
-    else:
-        return "Neutral"
-df["Sentiment"] = df["English_Translation"].progress_apply(sentiment)
-
-# Plot the countplot
-plt.figure(figsize=(10, 10))
-sns.set_style("whitegrid")
-ax = sns.countplot(x="Sentiment", data=df, palette=dict(Neutral="blue", Positive="green", Negative="red"))
-
-sentiment_counts = df['Sentiment'].value_counts()
-print("Sentiment Counts:\n" + str(sentiment_counts))
-
 # Load the spaCy model
 nlp = spacy.load("en_core_web_sm")
 
@@ -283,7 +263,7 @@ def extract_aspects_and_sentiments(comments):
     
     return aspect_sentiment_results
 
-# Extract the first 100 entries from a specific column (e.g., 'Processed_Comment')
+# Extract the some entries from a specific column (e.g., 'Processed_Comment')
 comments_subset = df['English_Translation'].head(10)
 
 # Now, you can pass this subset of comments to your processing function
@@ -291,7 +271,6 @@ aspect_results = extract_aspects_and_sentiments(comments_subset)
 
 # Apply aspect extraction to the 'English_Translation' column of the DataFrame
 #aspect_results = extract_aspects_and_sentiments(df['English_Translation'])
-
 
 # Initialize an empty list to store aspect-sentiment pairs as dictionaries
 aspect_sentiment_pairs = []
@@ -329,6 +308,6 @@ plt.xticks(rotation=45)
 plt.legend(title='Sentiment')
 plt.show()
 
-df.to_csv('test_aspects.csv', index=False)
+df.to_csv('test_aspects_result.csv', index=False)
 
 # %%

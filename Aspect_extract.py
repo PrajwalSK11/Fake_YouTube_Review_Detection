@@ -5,7 +5,6 @@ from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import word_tokenize
 from tqdm import tqdm
 from nltk.corpus import stopwords
-from textblob import TextBlob
 import unicodedata
 import re
 import warnings
@@ -35,7 +34,7 @@ stop_words = stopwords.words('english')
 lzr = WordNetLemmatizer()
 nlp = spacy.load("en_core_web_sm")
 
-# YouTube API key (from the first snippet)
+# YouTube API key
 api_key = "YOUR_API"
 
 def extract_youtube_comments(video_url, api_key, max_comments=40):
@@ -92,7 +91,7 @@ def hinglish_to_english(text):
         print(f"Error details: {e}")
         return ''
 
-# Function for text preprocessing (from the first snippet)
+# Function for text preprocessing
 def text_processing(text):
     # convert text into lowercase
     text = text.lower()
@@ -159,18 +158,18 @@ def text_processing(text):
     return text
 
 
-# Extracting comments from the specified YouTube video (from the first snippet)
+# Extracting comments from the specified YouTube video
 youtube_video_url = "youtube_URL"
 #comments = extract_youtube_comments(youtube_video_url, api_key)
 max_comments = 30
 comments_list = extract_youtube_comments(youtube_video_url, api_key, max_comments)
 
 
-# Create a DataFrame from the extracted comments (from the first snippet)
+# Create a DataFrame from the extracted comments
 #df = pd.DataFrame(comments, columns=["Video Title", "Comment"])
 df = pd.DataFrame(comments_list, columns=["Video Title", "Comment"])
 df.head()
-# Preprocess comments and translate Hinglish comments to English (from the first snippet)
+# Preprocess comments and translate Hinglish comments to English
 tqdm.pandas()
 df['Processed_Comment'] = df['Comment'].fillna('').progress_apply(text_processing)
 df = df[df['Processed_Comment'].str.len() > 0]
@@ -182,7 +181,7 @@ plt.figure(figsize=(25, 20))
 msno.matrix(df, color=[0.2, 0.4, 1])
 plt.show()
 
-# Visualize word cloud (from the first snippet)
+# Visualize word cloud
 wordcloud = WordCloud(width=800, height=400, random_state=21, max_font_size=110).generate(
     df['English_Translation'].str.cat(sep=' '))
 plt.figure(figsize=(12, 8))
@@ -190,7 +189,7 @@ plt.imshow(wordcloud, interpolation="bilinear")
 plt.axis('off')
 plt.show()
 
-# Tokenize and add POS tagging (from the first snippet)
+# Tokenize and add POS tagging
 nlp = spacy.load("en_core_web_sm")
 def tokenize_and_pos(text):
     # Check for NaN values
@@ -204,7 +203,7 @@ def tokenize_and_pos(text):
 tqdm.pandas()
 df['Tokenized_POS'] = df['English_Translation'].progress_apply(tokenize_and_pos)
 
-# Calculate word frequency and plot bar chart (from the first snippet)
+# Calculate word frequency and plot bar chart
 all_tokens = [token for tokens_pos in df['Tokenized_POS'] for token, pos in tokens_pos]
 freq_dist = FreqDist(all_tokens)
 top_words = freq_dist.most_common(10)
@@ -216,9 +215,8 @@ plt.ylabel('Frequency')
 plt.title('Top Words Frequency Distribution')
 plt.show()
 
-from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
-#df.fillna(method='bfill', inplace=True)
 # Initialize the SentimentIntensityAnalyzer
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 sent_analyser = SentimentIntensityAnalyzer()
 
 def polarity(text):
@@ -295,10 +293,10 @@ df.reset_index(drop=True, inplace=True)
 
 
 # Save the final DataFrame to a CSV file
-df.to_csv('final_youtube_comments_dataset.csv', index=False)
+df.to_csv('aspect_extract_result1.csv', index=False)
 
 # Read the processed data from the CSV file
-df = pd.read_csv(r'D:\Prajwal\PCCOE\Major project\Youtube\Fake_YouTube_Review_Detection\pyabsa\final_youtube_comments_dataset.csv')
+df = pd.read_csv(r'D:\Prajwal\PCCOE\Major project\Youtube\Fake_YouTube_Review_Detection\aspect_extract_result1.csv')
 
 # Save the processed DataFrame to a Pickle file
 with open(r'D:\Prajwal\PCCOE\Major project\Youtube\Fake_YouTube_Review_Detection\test_aspects.pkl', 'wb') as file:
