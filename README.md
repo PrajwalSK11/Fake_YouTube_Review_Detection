@@ -7,3 +7,5 @@ PyABSA is a Python tool for Aspect-Based Sentiment Analysis, simplifying sentime
 The test.py used the dataset created by us, and done the pre-processing on it and after all the advance processing we applied the pre-trained mode i.e ATEPC aspect extractor,to extract the aspect and its sentiment from the text.
 
 Then aspect_extract.py uses the API technique to extract the comments froom the youtube video URL at real time and does all the advance processing and then using pre-trained model to extract the aspect and its sentiment from the text.
+
+Demo: https://drive.google.com/file/d/1I8TAgxKDgKdfbCK4nMuicN_7jl1yOnUD/view?usp=sharing
